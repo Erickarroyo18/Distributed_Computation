@@ -1,9 +1,7 @@
 /**
- * Arroyo Martinez Erick Daniel
- * Computación Distribuida 2023-1
- * Práctica 1: Bully
- * Profesor: Luis Germán Pérez Hernández
- * Ayudantes: Daniel y Fernando Michel Tavera
+ * Practice 3: Bully
+ * Course: Distributed Computation
+ * Author: Arroyo Martinez Erick Daniel 
  **/
 #include <mpi.h>
 #include <stdio.h>
@@ -13,10 +11,11 @@
 
 int world_rank;
 int world_size;
+
 /**
- * Funcion que envia el mensaje de eleccion a los nodos mayores al actual (Mensaje de eleccion=1)
+ * Function that sends the election message to the nodes greater than the current one (Election message=1)
  */
-void send_Message_Election()
+void send_Election_Message()
 {
     int election = 1;
     for (int i = 0; i < world_size; ++i)
@@ -27,10 +26,11 @@ void send_Message_Election()
         }
     }
 }
+
 /**
- * Funcion que recibe los mensajes de eleccion de todos sus nodos inferiores (Mensaje de eleccion=1)
+ * Function that receives the election messages from all its lower nodes (Election message=1).
  */
-void recieve_Message_Election(int messages_election[])
+void recieve_Election_Message(int messages_election[])
 {
     for (int i = 0; i < world_size; ++i)
     {
@@ -40,9 +40,10 @@ void recieve_Message_Election(int messages_election[])
         }
     }
 }
+
 /**
- * Funcion que envia a todos los nodos inferiores al actual un mensaje de (ok=2) o de (timeout=3)
- * si se trata de un nodo caido
+ * Function that sends a (ok=2) or (timeout=3) message to all the nodes below the current one.
+ * if the node is down.
  */
 void send_Message_OK_Out(int *fall)
 {
@@ -55,11 +56,13 @@ void send_Message_OK_Out(int *fall)
         }
     }
 }
+
 /**
- * Funcion que recibe los mensajes de los nodos mayores al actual y almacena sus mensajes en un array
- * Guarda 2 si el nodo responde "ok"
- * Guarda 3 si el nodo responde "timeout"
- * Para los nodos inferiores guardamos 0, representando la falta de comunicacion
+ * Function that receives messages from nodes greater than the current node and stores their messages in an array.
+ * Stores 2 if the node responds "ok".
+ * Stores 3 if the node responds "timeout" * Stores 3 if the node responds "timeout" * For the lower nodes we store 0, 
+ * representing no communication.
+ * For the lower nodes we store 0, representing the lack of communication.
  */
 void recieve_Messages_Ok_Out(int messages[])
 {
@@ -75,11 +78,12 @@ void recieve_Messages_Ok_Out(int messages[])
         }
     }
 }
+
 /**
- * Funcion que envia el mensaje de nuevo lider a todos los nodos inferiores al actual, tras verificar que el actual
- * cumpla con ser el de mayor rango
+ * Function that sends the new leader message to all the nodes lower than the current one, after verifying that the 
+ * current one is the highest ranking node complies with being the highest ranking.
  */
-void send_Message_Leader(int *leader)
+void send_Leader_Message(int *leader)
 {
     int message = (*leader == 1) ? 4 : 5;
     for (int i = 0; i < world_size; ++i)
@@ -90,11 +94,12 @@ void send_Message_Leader(int *leader)
         }
     }
 }
+
 /**
- * Funcion que recibe los mensajes de lider de todos los nodos mayores al actual
- * Guarda cero en las localidades correspondiendes a los nodos cuyo contacto no existio
+ * Function that receives leader messages from all nodes greater than the current one.
+ * Stores zero in the locations corresponding to the nodes whose contact did not exist.
  */
-void recieve_Messages_Leader(int messages_l[])
+void recieve_Leader_Message(int messages_l[])
 {
     for (int i = 0; i < world_size; ++i)
     {
@@ -108,10 +113,11 @@ void recieve_Messages_Leader(int messages_l[])
         }
     }
 }
+
 /**
- * Funcion que determina dado un arreglo de respuestas (ok, timeout y 0) si un nodo es el de mayor rango
- * Es decir, si solo recibe un mensaje de "time out", y no recibe ningun mensaje de "ok", entonces este es el nodo
- * de mayor rango
+ * Function that determines given an array of responses (ok, timeout and 0) if a node is the highest ranking node.
+ * That is, if it receives only a "time out" message, and no "ok" message, then it is the highest ranking node
+ * with the highest rank
  */
 int isLeader(int messages[], int *fall)
 {
@@ -123,8 +129,9 @@ int isLeader(int messages[], int *fall)
     }
     return (counter == 0 && *fall == 0);
 }
+
 /**
- * Funcion que imprime un array
+ * Function that prints an array
  */
 void printArray(int array[])
 {
@@ -135,6 +142,7 @@ void printArray(int array[])
     }
     printf("]\n");
 }
+
 int main(int argc, char **argv)
 {
     MPI_Init(NULL, NULL);
@@ -144,23 +152,23 @@ int main(int argc, char **argv)
     int oks_Or_Outs[world_size];
     int leader[world_size];
     int fall = (world_rank==world_size-1) ? 1 : 0;
-    send_Message_Election();
-    recieve_Message_Election(elections);
+    send_Election_Message();
+    recieve_Election_Message(elections);
     send_Message_OK_Out(&fall);
     recieve_Messages_Ok_Out(oks_Or_Outs);
-    // Puede quitarle la documentacion a estas lineas para ver que mensajes recibe cada nodo respectivamente
-    //[(0=no comunicacion), (2="ok"), (3="timeout")]
+    // You can remove the documentation on these lines to see which messages each node receives respectively
+    //[(0=no comunication), (2="ok"), (3="timeout")]
     int isL = isLeader(oks_Or_Outs, &fall);
-    //printf("Los mensajes recibidos por el nodo (%d) son:\n", world_rank);
+    //printf("Messages received by the node (%d) are:\n", world_rank);
     //printArray(oks_Or_Outs);
-    //printf("El nodo (%d) es el nuevo lider? %s\n", world_rank, (isL == 1) ? "True" : "False");
-    send_Message_Leader(&isL);
-    recieve_Messages_Leader(leader);
+    //printf("The node (%d) is the new leader? %s\n", world_rank, (isL == 1) ? "True" : "False");
+    send_Leader_Message(&isL);
+    recieve_Leader_Message(leader);
     for (int i = 0; i < world_size; ++i)
     {
         if (leader[i] == 4)
         {
-            printf("(Nodo %d), mi nuevo lider es %d\n", world_rank, i);
+            printf("(Node %d), my new boss is %d\n", world_rank, i);
             break;
         }
     }

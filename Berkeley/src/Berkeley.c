@@ -1,9 +1,7 @@
 /**
- * Arroyo Martinez Erick Daniel
- * Computación Distribuida 2023-1
- * Práctica 2 : Berkeley
- * Profesor: Luis Germán Pérez Hernández
- * Ayudantes: Daniel y Fernando Michel Tavera
+ * Practice 2: Berkeley
+ * Course: Distributed Computation
+ * Author: Arroyo Martinez Erick Daniel 
  **/
 #include <mpi.h>
 #include <stdio.h>
@@ -13,8 +11,9 @@
 
 int world_rank;
 int world_size;
+
 /**
- * Funcion que genera un numero decimal aleatorio entre un valor minimo y maximo
+ * Function that generates a random decimal number between a minimum and a maximum value.
  */
 float randTime(float min, float max)
 {
@@ -22,10 +21,11 @@ float randTime(float min, float max)
     float scale = rand() / (float)RAND_MAX; /* [0, 1.0] */
     return min + scale * (max - min);       /* [min, max] */
 }
+
 /**
- * Funcion usada por el nodo maestro para enviar a cada nodo esclavo la solicitud de su tiempo local,
- * y que, a su vez, recibe el tiempo solicitado, calculando el retraso entre la hora de solicitud y recepcion
- * del tiempo
+ * Function used by the master node to send to each slave node the request for its local time,
+ * and which, in turn, receives the requested time, calculating the delay between the time of request and reception
+ * of the time
 */
 void queryAndRecieve(float slavesTimes[], float *myTime)
 {
@@ -39,7 +39,7 @@ void queryAndRecieve(float slavesTimes[], float *myTime)
             MPI_Recv(&slavesTimes[i], 1, MPI_FLOAT, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             int hourRecieve = (int)time(NULL);
             float delay = ((hourRecieve - hourQuery) / 2);
-            printf("Nodo(%d), *RETRASO CALCULADO [%f]*\n", i,delay);
+            printf("Node(%d), *ESTIMATED DELAY [%f]*\n", i,delay);
             slavesTimes[i] -= delay;
         }
         else
@@ -50,14 +50,15 @@ void queryAndRecieve(float slavesTimes[], float *myTime)
 }
 
 /**
- * Funcion que recive la petición del maestro solicitando el tiempo local de un nodo esclavo
+ * Function that receives the request from the master requesting the local time of a slave node.
  */
 void recieveAsk(int *message)
 {
     MPI_Recv(&message, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 }
+
 /**
- * Funcion que calcula el promedio entres los tiempos de todos los esclavos y del maestro
+ * Function that calculates the average between the times of all slaves and the master.
  */
 void avgTimes(float slaveTimes[], float *avg)
 {
@@ -67,9 +68,10 @@ void avgTimes(float slaveTimes[], float *avg)
     }
     *avg = *avg / world_size;
 }
+
 /**
- * Funcion usada por el nodo maestro para mandarle a cada nodo esclavo 
- * su diferencia con respecto al promedio de los tiempos
+ * Function used by the master node to send to each slave node 
+ * its difference with respect to the average time.
  */
 void sendTimeDiference(float *avg, float timeSlaves[])
 {
@@ -79,7 +81,7 @@ void sendTimeDiference(float *avg, float timeSlaves[])
         {
             float diference = (*avg - timeSlaves[i]);
             MPI_Send(&diference, 1, MPI_FLOAT, i, 0, MPI_COMM_WORLD);
-            printf("*DIFERENCIA DEL NODO(%d) RESPECTO AL PROMEDIO [%f]*\n", i, diference);
+            printf("*DIFFERENCE OF NODE(%d) FROM AVERAGE [%f]*\n", i, diference);
         }
     }
 }
@@ -92,15 +94,15 @@ int main(int argc, char **argv)
     float myTime = randTime(9.5, 10.5);
     if (world_rank == 0)
     {
-        printf("Nodo(MAESTRO) *TIEMPO LOCAL [%f]*\n", myTime);
+        printf("Node(MASTER) *LOCAL TIME [%f]*\n", myTime);
         float timesSlaves[world_size];
         queryAndRecieve(timesSlaves, &myTime);
         float avg;
         avgTimes(timesSlaves, &avg);
-        printf("**PROMEDIO DE TIEMPOS[%f]**\n", avg);
+        printf("** TIMES AVERAGE [%f]**\n", avg);
         sendTimeDiference(&avg, timesSlaves);
         myTime += (avg - myTime);
-        printf("Nodo(MAESTRO) *TIEMPO SINCRONIZADO [%f]*\n", myTime);
+        printf("Node(MASTER) *TIME SYNCHRONIZED [%f]*\n", myTime);
     }
     else
     {
@@ -108,10 +110,10 @@ int main(int argc, char **argv)
         float diference;
         recieveAsk(&message);
         MPI_Send(&myTime, 1, MPI_FLOAT, 0, 0, MPI_COMM_WORLD);
-        printf("Nodo(%d) *TIEMPO LOCAL [%f]*\n", world_rank, myTime);
+        printf("Node(%d) *LOCAL TIME [%f]*\n", world_rank, myTime);
         MPI_Recv(&diference, 1, MPI_FLOAT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         myTime += diference;
-        printf("Nodo(%d) *TIEMPO SINCRONIZADO [%f]*\n", world_rank, myTime);
+        printf("Node(%d) *TIME SYNCHRONIZED [%f]*\n", world_rank, myTime);
     }
 
     MPI_Finalize();

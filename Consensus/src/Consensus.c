@@ -1,10 +1,8 @@
 /**
- * Arroyo Martinez Erick Daniel
- * Computación Distribuida 2023-1 
- * Práctica 1: Consenso
- * Profesor: Luis Germán Pérez Hernández
- * Ayudantes: Daniel y Fernando Michel Tavera
-**/
+ * Practice 1: Consensus
+ * Course: Distributed Computation
+ * Author: Arroyo Martinez Erick Daniel 
+ **/
 #include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,7 +13,7 @@ int world_rank;
 int world_size;
 
 /*
- *Funcion que asigna a los comandantes traidores
+ * Role assigned to traitor commanders
  */
 void createTraitors(int nodes[])
 {
@@ -31,15 +29,16 @@ void createTraitors(int nodes[])
         }
     }
 }
+
 /*
-Esta funcion envia la decision de un comandante dado que es o no un traidor
-*/
+ * This function sends the decision of a given commander whether or not he is a traitor.
+ */
 void sendDecision(int *me, int *myDecision)
 {
     srand(time(NULL) + world_rank);
-    printf("El nodo %d, %s es Traidor\n", world_rank, *me ? "SI" : "NO");
+    printf("Node %d, %s is Traitor\n", world_rank, *me ? "YES" : "NO");
     int vote;
-    //Se genera asigna el voto original a los generales leales
+    //The original vote is generated and assigned to loyal generals.
     if(!*me){
         vote = *myDecision;
     }
@@ -57,8 +56,9 @@ void sendDecision(int *me, int *myDecision)
         }
     }
 }
+
 /*
- *Funcion que recibe la decision del resto de los comandantes
+ * Function that receives the decision of the rest of the commanders.
  */
 void recieveDecisions(int decisions[], int *myDecision)
 {
@@ -74,9 +74,10 @@ void recieveDecisions(int decisions[], int *myDecision)
         }
     }
 }
+
 /*
- *Funcion que envia el conjunto de decisiones recibidas por un comandante al resto de ellos
- * Esta funcion me dio errores, no se porque, por lo tanto lo implemente en el main
+ * Function that sends the set of decisions received by a commander to the rest of them.
+ * This function gave me errors, I don't know why, so I implemented it in the main.
  */
 void sendSetDecisions(int setDecisions[])
 {
@@ -90,7 +91,7 @@ void sendSetDecisions(int setDecisions[])
 }
 
 /*
- *Funcion que recibe el conjunto de decisiones recibidas por cada comandante
+ * Function that receives the set of decisions received by each commander.
  */
 void recieveSetDecisions(int matriz[world_size][world_size], int fstDecisions[])
 {
@@ -111,7 +112,7 @@ void recieveSetDecisions(int matriz[world_size][world_size], int fstDecisions[])
 }
 
 /*
- *Funcion que corrompe los mensajes obtenidos, si es que se trata de un traidor
+ * Function that corrupts the messages obtained, if it is a traitor.
  */
 void corruptDecisions(int *me, int decisions[])
 {
@@ -129,8 +130,9 @@ void corruptDecisions(int *me, int decisions[])
         return;
     }
 }
+
 /*
- *Funcion que dada la matriz de decisiones, recorre el conjunto de decisiones por cada
+ * Function that, given the decision matrix, runs through the set of decisions for each decision.
  */
 void fstMajority(int matriz[world_size][world_size], int majority[])
 {
@@ -163,9 +165,10 @@ void fstMajority(int matriz[world_size][world_size], int majority[])
         }
     }
 }
-/**
- * Funcion que a partir de las mayorias de cada comandante, toma una decision
- **/
+
+/*
+ * Function that, based on the majorities of each commander, makes a decision
+ */
 int finalDecision(int majorities[])
 {
     int decision, counterA = 0, counterR = 0;
@@ -201,20 +204,20 @@ int main(int argc, char **argv)
     MPI_Init(NULL, NULL);
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-    int nodes[world_size]; // Arreglo que almanara el conjunto de comandantes
-    int decisionByC[world_size];//Arreglo que almacena las decisiones de todos los comandantes
-    int matrizDecisions[world_size][world_size];// Matriz que almacena el conjunto de arreglos de decisiones de cada comandante
-    int fstMaj[world_size];//Arreglo que almacena las decisiones mayoritarias por comandante
-    createTraitors(nodes); //Se deciden los comandantes leales y traidores
-    int iAmTraitor = !nodes[world_rank];//Se verifica si el nodo es un traidor
+    int nodes[world_size]; // Arrangement of the commanding officer's group
+    int decisionByC[world_size];//Arrangement storing the decisions of all commanders
+    int matrizDecisions[world_size][world_size];// Matrix storing the set of decision arrangements of each commander.
+    int fstMaj[world_size];// Arrangement storing majority decisions by commander
+    createTraitors(nodes); //Loyalist and traitor commanders are decided
+    int iAmTraitor = !nodes[world_rank];//Checks if the node is a traitor
     srand(time(NULL) + world_rank);
     int random = rand();
-    int myDecision = random % 2;//Generamos decision inicial para cada general
-    printf("La decision del nodo %d es (%d):%s \n", world_rank,myDecision, myDecision? "ATACAR" : "RETIRARSE");
-    sendDecision(&iAmTraitor, &myDecision);//Se manda la decision del noto
-    recieveDecisions(decisionByC, &myDecision);//Se reciben el resto de decisiones
-    corruptDecisions(&iAmTraitor, decisionByC);//En caso de ser traidor, se corrompen las decisiones recibidas
-    //Se envia el arreglo de decisiones a cada comandante
+    int myDecision = random % 2;//We generate initial decision for each general
+    printf("La decision del nodo %d es (%d):%s \n", world_rank,myDecision, myDecision? "ATTACK" : "RETIRE");
+    sendDecision(&iAmTraitor, &myDecision);//Node's decision is sent
+    recieveDecisions(decisionByC, &myDecision);//The rest of the decisions are received
+    corruptDecisions(&iAmTraitor, decisionByC);//In case of being a traitor, the decisions received will be corrupted.
+    //The decision arrangement is sent to each commander.
     for (int i = 0; i < world_size; ++i)
     {
         if (i == world_rank)
@@ -223,16 +226,16 @@ int main(int argc, char **argv)
         }
         MPI_Send(&decisionByC, world_size, MPI_INT, i, 0, MPI_COMM_WORLD);
     }
-    recieveSetDecisions(matrizDecisions, decisionByC);//Se reciben los arreglos de decisiones
-    fstMajority(matrizDecisions, fstMaj);//Se calcula el arreglo de decisiones mayoritarias
-    int finalD = finalDecision(fstMaj);//Se determina la desicion
+    recieveSetDecisions(matrizDecisions, decisionByC);//Decision arrangements are received
+    fstMajority(matrizDecisions, fstMaj);//Majority decision arrangement is calculated
+    int finalD = finalDecision(fstMaj);//The decision is determined
     if (finalD)
     {
-        printf("El comandante %d, ha decidido atacar\n", world_rank);
+        printf("Commander %d, has decided to attack\n", world_rank);
     }
     else
     {
-        printf("El comandante %d, ha decidido retirarse\n", world_rank);
+        printf("Commander %d, has decided to retire\n", world_rank);
     }
     MPI_Finalize();
 }
